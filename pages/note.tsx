@@ -1,14 +1,12 @@
 import type { NextPage } from 'next';
 import { RecoilRoot } from 'recoil';
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Add, ChevronRight, Delete, ExpandMore, SaveAlt, Sync } from "@mui/icons-material"
 import { Alert, Button, Collapse, Dialog, DialogActions, DialogTitle, Fade, Menu, MenuItem, Portal, Snackbar, TextField } from "@mui/material"
-import produce, { current, enableMapSet } from "immer"
+import produce, { enableMapSet } from "immer"
 import { atom, selector, useRecoilSnapshot, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil"
 import TreeView from '@mui/lab/TreeView';
-import TreeItem, { treeItemClasses } from '@mui/lab/TreeItem';
-import CodeEditor from '../components/Note/Editor';
-import MarkdownView from '../components/Note/Preview';
+import TreeItem from '@mui/lab/TreeItem';
 import { TransitionProps } from '@mui/material/transitions';
 import { useSpring, animated } from 'react-spring'
 import { createDoc, deleteDocs, readAllDocs, saveDoc } from '../utils/api';
@@ -19,6 +17,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import DropDown from '../components/DropDown';
 import { useLocalStorage } from 'react-use';
 import { toast } from '../components/Toast';
+import Editor from '../components/Editor';
 
 enableMapSet();
 
@@ -125,7 +124,7 @@ const needSaveState = atom({
   default: false,
 })
 
-const AUTO_SAVE_TIME = 13;
+const AUTO_SAVE_TIME = 60;
 
 const autoSaveCountDownState = atom({
   key: 'autoSaveCountDownState',
@@ -336,7 +335,7 @@ const NotesTree: React.FC = () => {
 
   return <div>
     <TreeView
-      selected={currentNoteId || undefined}
+      selected={currentNoteId || ''}
       defaultCollapseIcon={<ExpandMore />}
       defaultExpandIcon={<ChevronRight />}
       onNodeSelect={onTreeNodeSelect}
@@ -350,7 +349,7 @@ const NotesTree: React.FC = () => {
 
 const Sider: React.FC = () => {
   return (
-    <div className="h-screen w-72 bg-stone-800">
+    <div className="h-screen w-72 shrink-0 bg-[#1e1c1e]">
       <ActionBar />
       <NotesTree />
     </div>
@@ -389,7 +388,7 @@ const Save: React.FC = () => {
         <LoadingButton
           loading={loading}
           disabled={loading}
-          className='absolute bottom-6 right-4 min-w-0 w-12 h-12 rounded-full'
+          className='absolute bottom-10 right-4 min-w-0 w-12 h-12 rounded-full z-10'
           variant='contained'
           onClick={() => handleSave()}
         ><Sync /></LoadingButton>
@@ -442,34 +441,29 @@ const Content: React.FC = () => {
   const currentNoteId = useRecoilValue(currentNoteIdState);
   const currentNote = useRecoilValue(currentNoteSelector);
   const setNoteNodesMap = useSetRecoilState(noteNodesMapState);
-  const codeEditorRef = useRef();
   const setNeedSave = useSetRecoilState(needSaveState);
   const { start } = useAutoSave();
 
   return (
-    <div className="flex flex-1 bg-stone-700">
+    <div className="flex flex-1 bg-[#26272d]">
       {
         currentNote && currentNoteId ? <>
-          <div className="relative flex-1 bg-stone-600">
-            <CodeEditor
-              ref={codeEditorRef}
+          <div className="relative flex-1">
+            <Editor
               key={currentNoteId}
-              // @ts-ignore
-              initialValue={currentNote?.raw}
-              onChange={() => {
-                // @ts-ignore
-                const editorValue = codeEditorRef.current?.getValue?.()
+              initialValue={currentNote.raw}
+              onChange={(editorValue) => {
                 setNoteNodesMap((origin) => produce(origin, draft => {
                   draft.set(currentNoteId, { ...draft.get(currentNoteId)!, name: getName(editorValue) || '', raw: editorValue })
                 }));
                 start();
                 setNeedSave(true)
               }}
-            />
+            >
+            </Editor>
             <Save></Save>
             <AutoSave></AutoSave>
           </div>
-          {currentNote ? <div className="flex-1 bg-stone-500"><MarkdownView value={currentNote.raw} /></div> : null}
         </> : 'Pick a Note'
       }
     </div>
