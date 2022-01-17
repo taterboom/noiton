@@ -1,7 +1,7 @@
 import type { NextPage } from 'next';
 import { RecoilRoot } from 'recoil';
 import { useState, useEffect, useCallback } from 'react';
-import { Add, ChevronRight, Delete, ExpandMore, SaveAlt, Sync } from "@mui/icons-material"
+import { Add, ChevronRight, Delete, ExpandMore, Sync } from "@mui/icons-material"
 import { Alert, Button, Collapse, Dialog, DialogActions, DialogTitle, Fade, Menu, MenuItem, Portal, Snackbar, TextField } from "@mui/material"
 import produce, { enableMapSet } from "immer"
 import { atom, selector, useRecoilSnapshot, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil"
@@ -526,14 +526,15 @@ const Note: React.FC = () => {
 }
 
 const NotePage: NextPage = () => {
-  const [isMe, setIsMe] = useLocalStorage('_emsi', false);
-  if (typeof window === "undefined") return <p>Loading...</p>;
+  const [inputPassword, setInputPassword] = useLocalStorage('_drowssap', '')
+  const isMe = inputPassword === process.env.notesPassword
+  if (typeof window === "undefined") return <p>Loading...</p>
   return (
     isMe
       ? <RecoilRoot><Note /></RecoilRoot>
-      : <div key="password" className="flex min-h-screen justify-center items-center text-slate-100 bg-stone-900"><TextField label="password" variant="standard" onChange={e => setIsMe(e.target.value === 'taterbumb')} /></div>
+      : <div key="password" className="flex min-h-screen justify-center items-center text-slate-100 bg-stone-900"><TextField label="password" variant="standard" onChange={e => setInputPassword(e.target.value)} /></div>
   )
 }
 
-export default NotePage;
+export default NotePage
 
